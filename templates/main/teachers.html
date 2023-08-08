@@ -1,0 +1,102 @@
+{% extends "./base.html" %} {% block title %} NANO - O'qituvchilar {% endblock title %} {% block content %}
+<div class="container">
+  <div class="row align-items-center">
+    {% for teacher in teachers %}
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="card border-success mb-3" style="max-width: 18rem">
+        <div class="card-header bg-transparent border-success">
+          {{ teacher.get_working_days_display }}, {{teacher.working_time}}
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">{{ teacher.full_name}}</h5>
+          <p class="card-text">
+            <b>Yo'nalish: </b> {% for course in teacher.courses.all %}
+            <span> {{ course.name }} </span> {% if teacher.courses|length > 1 %}, {% endif %} {% endfor %}
+            <br />
+            <b>Guruhlari: </b>
+            <span>
+              {% for group in teacher.group_set.all %}
+              <a
+                href="{% url 'main:group' group.id %}"
+                class="badge text-bg-primary"
+                >{{ group.name }}</a
+              >
+              {% endfor %}
+            </span>
+          </p>
+        </div>
+        <div class="card-footer bg-transparent border-success">
+          <a
+            href="{% url 'main:teacher' teacher.id %}"
+            class="btn btn-outline-primary"
+            >Batafsil
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        data-bs-toggle="modal"
+        data-bs-target="#addTeacherModal"
+      >
+        <div
+          class="d-flex justify-content-center align-items-center flex-column"
+        >
+          <span class="plus-icon" style="font-size: 50px">+</span>
+          O'qituvchi qo'shish
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div
+  class="modal fade"
+  id="addTeacherModal"
+  tabindex="-1"
+  aria-labelledby="addTeacherModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="addTeacherModalLabel">
+          O'qituvchi qo'shish
+        </h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form action="" method="post">
+          {% csrf_token %}
+          {{ form }}
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Bekor qilish
+        </button>
+        <button type="button" class="btn btn-primary" onclick="window.document.forms[0].submit()">Yaratish</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+
+{% block script %}
+<script>
+
+    document.addEventListener("DOMContentLoaded", () => {
+      new Choices("#id_courses")
+      new Choices("#id_working_days")
+    })
+
+</script>
+{% endblock %}

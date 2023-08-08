@@ -1,0 +1,147 @@
+{% extends "./base.html" %} {% block title %} Ro'yxatga olish {% endblock %} {% block content %}
+<div class="container">
+  <h1>Ro'yxatga olish</h1>
+  {% if messages %} {% for message in messages %}
+  <div
+    class="alert alert-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}danger{% elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS%}success{% endif %} alert-dismissible fade show"
+    role="alert"
+  >
+    {{ message }}
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  {% endfor %} {% endif %}
+  <table class="table table-hover">
+    <thead>
+      <tr>
+        <th scope="col">#</th>
+        <th scope="col">F.I.Sh</th>
+        <th scope="col">Manzil</th>
+        <th scope="col">Telefon raqami</th>
+        <th scope="col">Yo'nalishi</th>
+        <th scope="col">Guruh</th>
+        <th scope="col">Harakat</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in students %}
+      <tr>
+        <th scope="row">{{ forloop.counter }}</th>
+        <td>{{ student.full_name }}</td>
+        <td>{{ student.address }}</td>
+        <td>
+          {% for phone_number in student.phone_numbers|split:"," %}
+          <a href="tel:{{ phone_number|strip }}">{{ phone_number }}</a><br />
+          {% endfor %}
+        </td>
+        <td>{{student.course}}</td>
+        <td>
+          <select name="group" class="form-control" id="group">
+            <option value="" selected>Noaniq</option>
+            {% for group in groups %}
+            <option value="{{ group.id }}">{{group.name}}</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td>
+          <button
+            class="btn btn-outline-primary"
+            onclick="moveStudent({ studentId: `{{ student.id }}`, order: `{{ forloop.counter }}` })"
+          >
+            qo'shish
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="card">
+    <div class="d-flex card-header align-items-center justify-content-between">
+      <h4>Register new student</h4>
+      <button
+        class="btn btn-link"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapseBody"
+        aria-expanded="false"
+        aria-controls="collapseBody"
+      >
+        Toggle
+      </button>
+    </div>
+    <div id="collapseBody" class="collapse show" aria-labelledby="collapseHeader">
+      <div class="card-body">
+        <form action="" method="post">
+          {% csrf_token %}
+          <div class="row">
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.full_name.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.full_name.auto_id}}"
+                >{{form.full_name.label}}</label
+              >
+              {{ form.full_name }}
+            </div>
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.address.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.address.auto_id}}"
+                >{{ form.address.label }}</label
+              >
+              {{ form.address }}
+            </div>
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.phone_numbers.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.phone_numbers.auto_id}}"
+                >{{ form.phone_numbers.label }}</label
+              >
+              {{ form.phone_numbers }}
+            </div>
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.course.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.course.auto_id}}"
+                >{{ form.course.label }}</label
+              >
+              {{ form.course }}
+            </div>
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.condition.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.condition.auto_id}}"
+                >{{ form.condition.label }}</label
+              >
+              {{ form.condition }}
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block script %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    new Choices("#id_course");
+    new Choices("#id_condition")
+  });
+  const moveStudent = function ({ studentId, order }) {
+    const selectedGroup =
+      document.querySelectorAll("[name='group']")[order - 1];
+    if (selectedGroup.value) {
+      const url = `/students/${studentId}/move/${selectedGroup.value}`;
+      fetch(url)
+        .then((r) => r.json())
+        .then((r) => {
+          location.reload();
+        });
+    }
+  };
+</script>
+{% endblock %}
