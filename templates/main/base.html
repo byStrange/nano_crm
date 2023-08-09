@@ -6,7 +6,7 @@
     <title>Home</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="stylesheet" href="{% static 'assets/css/uiverse.css' %}">
+    <link rel="stylesheet" href="{% static 'assets/css/uiverse.css' %}" />
     <link rel="stylesheet" href="{% static 'assets/css/choices.min.css' %}" />
     <link rel="stylesheet" href="{% static 'assets/css/bootstrap.min.css' %}" />
     <script
@@ -58,7 +58,7 @@
                   <span class="ms-1 d-none d-sm-inline">Guruhlar</span>
                 </a>
               </li>
-              {% if request.user %}
+              {% if request.user.user_type == "chef" %}
               <li>
                 <a
                   href="{% url 'main:teachers' %}"
@@ -84,7 +84,6 @@
             <hr />
             <div class="dropdown pb-4">
               <a
-                href="#"
                 class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
                 id="dropdownUser1"
                 data-bs-toggle="dropdown"
@@ -93,6 +92,11 @@
                 <span class="d-none d-sm-inline mx-1"
                   >{{ request.user.username }}</span
                 >
+                <span
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                >
+                  {{ request.user.user_type}}
+                </span>
               </a>
               <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
                 <li>

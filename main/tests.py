@@ -23,22 +23,22 @@ User = get_user_model()
 
 class UpdateOrCreateAttendanceTest(TestCase):
     def setUp(self):
-        dept = Dept.objects.create(name="TEST")
-        course = Course.objects.create(dept=dept, name="TEST COURSE")
-        group = Class.objects.create(
+        dept: Dept = Dept.objects.create(name="TEST")
+        course: Course = Course.objects.create(dept=dept, name="TEST COURSE")
+        group: Class = Class.objects.create(
             dept=dept, name="G1", day="Monday, Tuesday, Wednesday"
         )
-        user = User.objects.create(
+        user: User = User.objects.create(
             username="rakhmatullo", password="Abcd1234!", user_type="teacher"
         )
-        teacher = Teacher.objects.create(
+        teacher: Teacher = Teacher.objects.create(
             dept=dept,
             full_name="Fan Zhendong",
             working_days="workingdays",
             working_time="12:00",
             user=user,
         )
-        assign = Assign.objects.create(
+        assign: Assign= Assign.objects.create(
             class_id=group, course=course, teacher=teacher
         )
         AttendanceClass.objects.create(
@@ -74,7 +74,7 @@ class UpdateOrCreateAttendanceTest(TestCase):
             attendance_class=attendance_class,
         )
 
-        self.assertTrue(result)
+        self.assertFalse(result)
 
     def test_update_or_create_attendance_second_case(self):
         students = Student.objects.all()

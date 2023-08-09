@@ -13,9 +13,11 @@ from main.views import (
     take_attendance
 )
 
-app_name = "main"
+from typing import List
 
-urlpatterns = [
+app_name: str = "main"
+
+urlpatterns: List[path] = [
     path("", lambda request: redirect("main:dashboard"), name="dashboard"),
     path("dashboard/", index, name="dashboard"),
     path("groups/", GroupsView.as_view(), name="groups"),

@@ -1,7 +1,13 @@
 from django.shortcuts import render, redirect
 from django.db.models.query import QuerySet
 from django.template.defaulttags import register
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import (
+    JsonResponse,
+    HttpResponseForbidden,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseRedirect,
+)
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -9,12 +15,12 @@ from django.utils.safestring import mark_safe
 from django.views import View
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
-
-# a = ContentType.objects.get_for_id()
+from django.forms import Form
 
 import json
-from typing import Dict
-from datetime import datetime
+from datetime import datetime, time
+from typing import Dict, List
+import uuid
 
 from main.models import (
     Assign,
@@ -48,7 +54,7 @@ def parse(value, key):
 
 
 @login_required
-def index(request):
+def index(request: HttpRequest) -> HttpResponse:
     return render(request, "main/dashboard.html")
 
 
@@ -56,8 +62,8 @@ class GroupsView(View):
     template_name = "main/groups.html"
     form_class = CreateClassForm
 
-    def get(self, request):
-        form = self.form_class()
+    def get(self, request: HttpRequest) -> HttpResponse:
+        form: Form = self.form_class()
         assign_objects = Assign.objects.prefetch_related(
             "class_id", "course", "teacher"
         ).all()
@@ -70,32 +76,35 @@ class GroupsView(View):
             },
         )
 
-    def post(self, request):
-        form = self.form_class(request.POST)
+    def post(self, request: HttpRequest) -> HttpResponse:
+        form: Form = self.form_class(request.POST)
         if form.is_valid():
             return self.handle_valid_form(form, request)
         else:
-            print(form.errors)
             print("Form is invalid")
-            groups = Class.objects.all()
+            groups: QuerySet[Class] = Class.objects.all()
             return render(request, self.template_name, {"groups": groups, "form": form})
 
-    def handle_valid_form(self, form, request):
-        group = Class(name=form.cleaned_data["name"], day=form.cleaned_data["day"])
+    def handle_valid_form(self, form: Form, request: HttpRequest) -> HttpResponse:
+        group: Class = Class(
+            name=form.cleaned_data["name"], day=form.cleaned_data["day"]
+        )
         if not request.user.is_staff:
             return self.create_teacher_group(form, group, request)
         else:
             return self.handle_staff_error()
 
-    def create_teacher_group(self, form, group, request):
-        course_id = form.cleaned_data["course"]
-        teacher = Teacher.objects.get(user__username=request.user.username)
-        course = Course.objects.get(id=course_id)
+    def create_teacher_group(
+        self, form: Form, group: Class, request: HttpRequest
+    ) -> HttpResponseRedirect:
+        course_id: int = form.cleaned_data["course"]
+        teacher: Teacher = Teacher.objects.get(user__username=request.user.username)
+        course: Course = Course.objects.get(id=course_id)
 
-        group.dept = teacher.dept
+        group.dept: Dept = teacher.dept
         group.save()
 
-        assign = Assign(
+        assign: Assign = Assign(
             class_id=group,
             course=course,
             teacher=teacher,
@@ -114,29 +123,34 @@ class GroupsView(View):
 
 
 @login_required
-def group(request, assign_id):
+def group(request: HttpRequest, assign_id: int) -> HttpResponse:
     if request.method == "POST":
         pass
-    attendance_class_exists = False
-    attendances = None
-    period_end = True
-    now = timezone.now()
-    assign = Assign.objects.select_related("class_id").get(id=assign_id)
-    attendance_class_queryset = AttendanceClass.objects.filter(date__date=now.date(), assign=assign)
+    attendance_class_exists: bool = False
+    attendances: QuerySet[Attendance] | None = None
+    period_end: bool = True
+    now: datetime = timezone.now()
+    assign: Assign = Assign.objects.select_related("class_id").get(id=assign_id)
+    attendance_class_queryset: QuerySet[
+        AttendanceClass
+    ] = AttendanceClass.objects.filter(date__date=now.date(), assign=assign)
     course_period: str = assign.period
     course_start_time_str, course_end_time_str = course_period.split(" - ")
-    course_start_time, course_end_time = [datetime.strptime(course_start_time_str, "%H:%M").time(), datetime.strptime(course_end_time_str, "%H:%M").time()]
+    course_start_time, course_end_time = [
+        datetime.strptime(course_start_time_str, "%H:%M").time(),
+        datetime.strptime(course_end_time_str, "%H:%M").time(),
+    ]
     if now.time() < course_start_time or now.time() > course_end_time:
         period_end = True
     if attendance_class_queryset.exists():
         print(attendance_class_queryset)
         attendance_class_exists = True
-        attendance_class = attendance_class_queryset.first()
-        attendances = attendance_class.attendance_set.select_related("student").all()
-        
-    
-    print(period_end)
-    students = assign.class_id.student_set.all()
+        attendance_class: AttendanceClass = attendance_class_queryset.first()
+        attendances: QuerySet[
+            Attendance
+        ] = attendance_class.attendance_set.select_related("student").all()
+
+    students: QuerySet[Student] = assign.class_id.student_set.all()
     return render(
         request,
         "main/group.html",
@@ -146,37 +160,47 @@ def group(request, assign_id):
             "students": students,
             "current_date": timezone.now(),
             "attendances": attendances,
-            "out_of_period": period_end
+            "out_of_period": period_end,
         },
     )
 
 
 @login_required
-def take_attendance(request, assign_id):
+def take_attendance(request: HttpRequest, assign_id: int) -> JsonResponse:
     if request.method == "POST":
         try:
-            now = timezone.now()
-            attendance_list = json.loads(request.body)
+            now: datetime = timezone.now()
+            attendance_list: Dict[str, bool] = json.loads(request.body)
             assign = Assign.objects.get(id=assign_id)
-            attendance_class_queryset = AttendanceClass.objects.filter(date__date=now.date(), assign=assign)
-            student_ids = [student_id for student_id in attendance_list]
+            attendance_class_queryset: QuerySet[
+                AttendanceClass
+            ] = AttendanceClass.objects.filter(date__date=now.date(), assign=assign)
+            student_ids: List[int] = [student_id for student_id in attendance_list]
             if attendance_class_queryset.exists():
-                attendance_class = attendance_class_queryset.first()
+                attendance_class: AttendanceClass = attendance_class_queryset.first()
                 course_period: str = attendance_class.assign.period
                 course_start_time_str, course_end_time_str = course_period.split(" - ")
-                course_start_time, course_end_time = [datetime.strptime(course_start_time_str, "%H:%M").time(), datetime.strptime(course_end_time_str, "%H:%M").time()]
+                course_start_time, course_end_time = [
+                    datetime.strptime(course_start_time_str, "%H:%M").time(),
+                    datetime.strptime(course_end_time_str, "%H:%M").time(),
+                ]
                 if course_start_time <= now.time() <= course_end_time:
                     # update attendance
                     pass
                 else:
-                    return JsonResponse({"error": "Cannot update attendance outside of course period"})
+                    return JsonResponse(
+                        {"error": "Cannot update attendance outside of course period"}
+                    )
                 # print(now - attendance_class.first().date)
                 return JsonResponse({"error": "Attendance has taken for this day"})
-            attendance_class = AttendanceClass(assign=assign)
+            attendance_class: AttendanceClass = AttendanceClass(assign=assign)
             attendance_class.save()
-            students = Student.objects.filter(id__in=student_ids)
-            _update_or_create_attendance(attendance_list=attendance_list, students=students, attendance_class=attendance_class)
-            print(attendance_list)
+            students: QuerySet[Student] = Student.objects.filter(id__in=student_ids)
+            _update_or_create_attendance(
+                attendance_list=attendance_list,
+                students=students,
+                attendance_class=attendance_class,
+            )
             return JsonResponse({"success": "huh"})
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON data"}, status=400)
@@ -212,29 +236,29 @@ def _update_or_create_attendance(
 
 
 @login_required
-def teachers(request):
+def teachers(request: HttpRequest) -> HttpResponse:
     # if not request.user.is_staff:
-        # return redirect("main:dashboard")
+    # return redirect("main:dashboard")
     if request.method == "POST":
-        form = CreateTeacherForm(request.POST)
+        form: Form = CreateTeacherForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect("main:teachers")
         else:
             print(form.errors)
             return
-    form = CreateTeacherForm()
-    teachers = Teacher.objects.all()
+    form: Form = CreateTeacherForm()
+    teachers: QuerySet[Teacher] = Teacher.objects.all()
     return render(request, "main/teachers.html", {"teachers": teachers, "form": form})
 
 
 @login_required
-def register_student(request):
+def register_student(request: HttpRequest) -> HttpResponse | HttpResponseRedirect:
     if request.user.is_staff:
         return HttpResponseForbidden()
     if request.method == "POST":
         print(request.POST)
-        form = RegisterStudentForm(request.POST)
+        form: Form = RegisterStudentForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect("main:register_student")
@@ -244,12 +268,12 @@ def register_student(request):
                 mark_safe(form.errors),
             )
             return redirect("main:register_student")
-    teacher = request.user.teacher
-    students = Student.objects.filter(
+    teacher: Teacher = request.user.teacher
+    students: QuerySet[Student] = Student.objects.filter(
         group=None, course__dept=teacher.dept
     ).select_related("course")
-    groups = Class.objects.filter(dept=teacher.dept)
-    form = RegisterStudentForm(teacher=teacher)
+    groups: QuerySet[Class] = Class.objects.filter(dept=teacher.dept)
+    form: Form = RegisterStudentForm(teacher=teacher)
     return render(
         request,
         "main/register_student.html",
@@ -258,11 +282,11 @@ def register_student(request):
 
 
 @login_required
-def students_view(request):
+def students_view(request: HttpResponse) -> HttpResponse | HttpResponseForbidden:
     if request.user.is_staff:
         return HttpResponseForbidden()
-    teacher = request.user.teacher
-    students = Student.objects.filter(
+    teacher: Teacher = request.user.teacher
+    students: QuerySet[Student] = Student.objects.filter(
         group__dept=teacher.dept, course__dept=teacher.dept
     )
     context = {"students": students, "teacher": teacher}
@@ -270,19 +294,21 @@ def students_view(request):
 
 
 @login_required
-def delete_teacher(request, teacher_id):
+def delete_teacher(request: HttpRequest, teacher_id: int):
     pass
 
 
 @login_required
-def move_student(request, student_id, class_id):
+def move_student(
+    request: HttpRequest, student_id: uuid.UUID, class_id: int
+) -> JsonResponse:
     try:
-        student = Student.objects.get(id=student_id)
-        group = Class.objects.get(id=class_id)
+        student: Student = Student.objects.get(id=student_id)
+        group: Class = Class.objects.get(id=class_id)
     except Student.DoesNotExist or Class.DoesNotExist:
         messages.error(request, "something has burned up")
         return JsonResponse({"error": "either student or group object not found"})
-    student.group = group
+    student.group: Class = group
     student.save()
     messages.success(
         request,
@@ -294,7 +320,7 @@ def move_student(request, student_id, class_id):
 
 
 @login_required
-def teacher(request, teacher_id):
+def teacher(request: HttpRequest, teacher_id: uuid.UUID):
     teacher = Teacher.objects.get(id=teacher_id)
 
     return render(request, "main/teacher.html", {"teacher": teacher})
