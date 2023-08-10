@@ -1,22 +1,13 @@
-from django.test import TestCase
+import random
+from datetime import datetime
+
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet as Q
+from django.test import TestCase
 
-from datetime import datetime
-import random
-
+from main.models import (Assign, Attendance, AttendanceClass, Class, Course,
+                         Dept, Student, Teacher)
 from main.views import _update_or_create_attendance
-from main.models import (
-    AttendanceClass,
-    Attendance,
-    Student,
-    Course,
-    Class,
-    Dept,
-    Assign,
-    Class,
-    Teacher,
-)
 
 User = get_user_model()
 

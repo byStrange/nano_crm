@@ -1,33 +1,26 @@
-from django.shortcuts import render, redirect
-from django.db.models.query import QuerySet
-from django.template.defaulttags import register
-from django.http import JsonResponse, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required
+import json
+from datetime import datetime
+from typing import Dict
+
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db.models.query import QuerySet
+from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import redirect, render
+from django.template.defaulttags import register
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.views import View
-from django.utils import timezone
-from django.contrib.contenttypes.models import ContentType
+
+from main.forms import CreateClassForm, CreateTeacherForm, RegisterStudentForm
+from main.models import (Assign, Attendance, AttendanceClass, Class, Course,
+                         Dept, Student, Teacher)
 
 # a = ContentType.objects.get_for_id()
 
-import json
-from typing import Dict
-from datetime import datetime
 
-from main.models import (
-    Assign,
-    Attendance,
-    Class,
-    Course,
-    Dept,
-    Student,
-    Teacher,
-    AttendanceClass,
-)
-from main.forms import CreateClassForm, CreateTeacherForm
-from main.forms import RegisterStudentForm
 
 
 @register.filter(name="split")

@@ -1,17 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from main.models import (
-    Attendance,
-    Course,
-    Class,
-    Student,
-    Teacher,
-    Assign,
-    AttendanceClass,
-    Course,
-    Dept,
-    CustomUser,
-)
+
+from main.models import (Assign, Attendance, AttendanceClass, Class, Course,
+                         CustomUser, Dept, Student, Teacher)
 
 models = [
     Class,

@@ -1,7 +1,8 @@
-from typing import Literal
-from django.db import models
-from django.contrib.auth.models import AbstractUser
 import uuid
+from typing import Literal
+
+from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 time_slots = (
     ("8:00 - 9:30", "8:00 - 9:30"),

@@ -1,5 +1,7 @@
 from django import forms
-from main.models import Class, Course, Student, Teacher, time_slots, DAYS_OF_WEEK
+
+from main.models import (DAYS_OF_WEEK, Class, Course, Student, Teacher,
+                         time_slots)
 
 DEFAULT_INPUT_ATTRS = {"class": "form-control"}
 
