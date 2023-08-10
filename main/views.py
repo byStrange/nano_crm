@@ -1,24 +1,16 @@
 import json
-from datetime import datetime
-from typing import Dict
+import uuid
+from datetime import datetime, time
+from typing import Dict, List
 
-from django.shortcuts import render, redirect
-from django.db.models.query import QuerySet
-from django.template.defaulttags import register
-from django.http import (
-    JsonResponse,
-    HttpResponseForbidden,
-    HttpRequest,
-    HttpResponse,
-    HttpResponseRedirect,
-)
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
-from django.http import HttpResponseForbidden, JsonResponse
+from django.forms import Form
+from django.http import (HttpRequest, HttpResponse, HttpResponseForbidden,
+                         HttpResponseRedirect, JsonResponse)
 from django.shortcuts import redirect, render
 from django.template.defaulttags import register
 from django.utils import timezone
@@ -31,14 +23,7 @@ from main.models import (Assign, Attendance, AttendanceClass, Class, Course,
 
 # a = ContentType.objects.get_for_id()
 
-from django.utils import timezone
-from django.contrib.contenttypes.models import ContentType
-from django.forms import Form
 
-import json
-from datetime import datetime, time
-from typing import Dict, List
-import uuid
 
 
 

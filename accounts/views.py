@@ -1,13 +1,12 @@
+from django import forms
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.utils.safestring import mark_safe
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from django import forms
 
-from main.models import Teacher, CustomUser
 from accounts.forms import LoginForm
-from main.models import Teacher
+from main.models import CustomUser, Teacher
 
 # Create your views here.
 

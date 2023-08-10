@@ -1,28 +1,13 @@
+from typing import List, Tuple
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-
-from main.models import (Assign, Attendance, AttendanceClass, Class, Course,
-                         CustomUser, Dept, Student, Teacher)
 from django.db import models
-from django.http import HttpRequest
 from django.db.models.query import QuerySet
+from django.http import HttpRequest
 
-
-from typing import Tuple, List
-
-from main.models import (
-    Attendance,
-    Course,
-    Class,
-    Student,
-    Teacher,
-    Assign,
-    AttendanceClass,
-    Course,
-    Dept,
-    CustomUser,
-    Chef,
-)
+from main.models import (Assign, Attendance, AttendanceClass, Chef, Class,
+                         Course, CustomUser, Dept, Student, Teacher)
 
 ListDisplay = List[str] | Tuple[str]
 

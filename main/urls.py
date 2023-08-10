@@ -1,11 +1,11 @@
+from typing import List
+
 from django.shortcuts import redirect
 from django.urls import path
 
 from main.views import (GroupsView, delete_teacher, group, index, move_student,
                         register_student, students_view, take_attendance,
                         teacher, teachers)
-
-from typing import List
 
 app_name: str = "main"
 
