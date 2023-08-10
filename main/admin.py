@@ -3,8 +3,16 @@ from django.contrib.auth.admin import UserAdmin
 
 from main.models import (Assign, Attendance, AttendanceClass, Class, Course,
                          CustomUser, Dept, Student, Teacher)
+from django.db import models
+from django.http import HttpRequest
+from django.db.models.query import QuerySet
 
-models = [
+
+from typing import Tuple, List
+
+from main.models import (
+    Attendance,
+    Course,
     Class,
     Student,
     Teacher,
@@ -12,7 +20,14 @@ models = [
     AttendanceClass,
     Course,
     Dept,
-]
+    CustomUser,
+    Chef,
+)
+
+ListDisplay = List[str] | Tuple[str]
+
+models = [Class, Student, Teacher, Assign, AttendanceClass, Course, Dept, Chef]
+
 
 
 class CustomUserAdmin(UserAdmin):
@@ -30,12 +45,16 @@ class CustomUserAdmin(UserAdmin):
         ),
     )
 
-class AttendanceAdmin(admin.ModelAdmin):
-    list_display = ("student", "is_present", "attendance_class")
-    list_select_related = ("student", "attendance_class__assign")
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related("student", "attendance_class")
+class AttendanceAdmin(admin.ModelAdmin):
+    list_display: ListDisplay = ("student", "is_present", "attendance_class")
+    list_select_related: ListDisplay = ("student", "attendance_class__assign")
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        return (
+            super().get_queryset(request).select_related("student", "attendance_class")
+        )
+
 
 # Register the CustomUser model with the customized UserAdmin
 admin.site.register(CustomUser, CustomUserAdmin)

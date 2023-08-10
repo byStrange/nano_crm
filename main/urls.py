@@ -5,9 +5,11 @@ from main.views import (GroupsView, delete_teacher, group, index, move_student,
                         register_student, students_view, take_attendance,
                         teacher, teachers)
 
-app_name = "main"
+from typing import List
 
-urlpatterns = [
+app_name: str = "main"
+
+urlpatterns: List[path] = [
     path("", lambda request: redirect("main:dashboard"), name="dashboard"),
     path("dashboard/", index, name="dashboard"),
     path("groups/", GroupsView.as_view(), name="groups"),

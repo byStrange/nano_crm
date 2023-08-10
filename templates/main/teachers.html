@@ -10,16 +10,13 @@
         <div class="card-body">
           <h5 class="card-title">{{ teacher.full_name}}</h5>
           <p class="card-text">
-            <b>Yo'nalish: </b> {% for course in teacher.courses.all %}
-            <span> {{ course.name }} </span> {% if teacher.courses|length > 1 %}, {% endif %} {% endfor %}
-            <br />
             <b>Guruhlari: </b>
             <span>
-              {% for group in teacher.group_set.all %}
+              {% for assign in teacher.assign_set.all %}
               <a
-                href="{% url 'main:group' group.id %}"
+                href="#"
                 class="badge text-bg-primary"
-                >{{ group.name }}</a
+                >{{  assign.class_id }}</a
               >
               {% endfor %}
             </span>
