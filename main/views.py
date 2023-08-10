@@ -64,9 +64,11 @@ class GroupsView(View):
 
     def get(self, request: HttpRequest) -> HttpResponse:
         form: Form = self.form_class()
-        assign_objects = Assign.objects.prefetch_related(
-            "class_id", "course", "teacher"
-        ).all()
+        assign_objects = (
+            Assign.objects.filter(teacher=request.user.teacher)
+            .prefetch_related("class_id", "course", "teacher")
+            .all()
+        )
         return render(
             request,
             self.template_name,
@@ -128,8 +130,8 @@ def group(request: HttpRequest, assign_id: int) -> HttpResponse:
         pass
     attendance_class_exists: bool = False
     attendances: QuerySet[Attendance] | None = None
-    period_end: bool = True
-    now: datetime = timezone.now()
+    period_end: bool = False
+    now: datetime = datetime.now()
     assign: Assign = Assign.objects.select_related("class_id").get(id=assign_id)
     attendance_class_queryset: QuerySet[
         AttendanceClass
@@ -141,9 +143,9 @@ def group(request: HttpRequest, assign_id: int) -> HttpResponse:
         datetime.strptime(course_end_time_str, "%H:%M").time(),
     ]
     if now.time() < course_start_time or now.time() > course_end_time:
+        print("what the fuck")
         period_end = True
     if attendance_class_queryset.exists():
-        print(attendance_class_queryset)
         attendance_class_exists = True
         attendance_class: AttendanceClass = attendance_class_queryset.first()
         attendances: QuerySet[
@@ -151,6 +153,7 @@ def group(request: HttpRequest, assign_id: int) -> HttpResponse:
         ] = attendance_class.attendance_set.select_related("student").all()
 
     students: QuerySet[Student] = assign.class_id.student_set.all()
+    print(period_end)
     return render(
         request,
         "main/group.html",
@@ -169,33 +172,37 @@ def group(request: HttpRequest, assign_id: int) -> HttpResponse:
 def take_attendance(request: HttpRequest, assign_id: int) -> JsonResponse:
     if request.method == "POST":
         try:
-            now: datetime = timezone.now()
+            now: datetime = datetime.now()
             attendance_list: Dict[str, bool] = json.loads(request.body)
             assign = Assign.objects.get(id=assign_id)
             attendance_class_queryset: QuerySet[
                 AttendanceClass
             ] = AttendanceClass.objects.filter(date__date=now.date(), assign=assign)
-            student_ids: List[int] = [student_id for student_id in attendance_list]
+            student_ids: List[str] = [student_id for student_id in attendance_list]
+            print(student_ids, attendance_list)
+            students: QuerySet[Student] = Student.objects.filter(id__in=student_ids)
+            course_period: str = assign.period
+            course_start_time_str, course_end_time_str = course_period.split(" - ")
+            course_start_time, course_end_time = [
+                datetime.strptime(course_start_time_str, "%H:%M").time(),
+                datetime.strptime(course_end_time_str, "%H:%M").time(),
+            ]
+            if not (course_start_time <= now.time() <= course_end_time):
+                return JsonResponse(
+                    {"error": "Cannot update attendance outside of course period"}
+                )
             if attendance_class_queryset.exists():
                 attendance_class: AttendanceClass = attendance_class_queryset.first()
-                course_period: str = attendance_class.assign.period
-                course_start_time_str, course_end_time_str = course_period.split(" - ")
-                course_start_time, course_end_time = [
-                    datetime.strptime(course_start_time_str, "%H:%M").time(),
-                    datetime.strptime(course_end_time_str, "%H:%M").time(),
-                ]
-                if course_start_time <= now.time() <= course_end_time:
-                    # update attendance
-                    pass
-                else:
-                    return JsonResponse(
-                        {"error": "Cannot update attendance outside of course period"}
-                    )
-                # print(now - attendance_class.first().date)
-                return JsonResponse({"error": "Attendance has taken for this day"})
+                _update_or_create_attendance(
+                    attendance_list=attendance_list,
+                    students=students,
+                    attendance_class=attendance_class,
+                )
+                return JsonResponse(
+                    {"success": "Attendance has been updated successfull"}
+                )
             attendance_class: AttendanceClass = AttendanceClass(assign=assign)
             attendance_class.save()
-            students: QuerySet[Student] = Student.objects.filter(id__in=student_ids)
             _update_or_create_attendance(
                 attendance_list=attendance_list,
                 students=students,

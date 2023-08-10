@@ -8,14 +8,10 @@ Choices = Tuple[Tuple[str, str]]
 
 time_slots: Choices = (
     ("8:00 - 9:30", "8:00 - 9:30"),
-    ("10:00 - 9:30", "8:30 - 9:30"),
-    ("9:30 - 10:30", "9:30 - 10:30"),
-    ("11:00 - 11:50", "11:00 - 11:50"),
-    ("11:50 - 12:40", "11:50 - 12:40"),
-    ("12:40 - 1:30", "12:40 - 1:30"),
-    ("2:30 - 3:30", "2:30 - 3:30"),
-    ("3:30 - 4:30", "3:30 - 4:30"),
-    ("4:30 - 5:30", "4:30 - 5:30"),
+    ("10:00 - 11:30", "10:00 - 11:30"),
+    ("11:30 - 13:00", "11:30 - 13:00"),
+    ("14:00 - 15:30", "14:00 - 15:30"),
+    ("15:30 - 17:00", "15:30 - 17:00"),
 )
 
 DAYS_OF_WEEK: Choices = (
@@ -188,9 +184,7 @@ class Teacher(models.Model):
         max_length=254, choices=WORKING_DAYS_CHOICES
     )
     working_time: models.CharField = models.CharField(max_length=254)
-    courses: models.ManyToManyField = models.ManyToManyField(
-        "Course", blank=True
-    )
+    courses: models.ManyToManyField = models.ManyToManyField("Course", blank=True)
     address: models.CharField = models.CharField(max_length=254, default="Andijon")
     phone_numbers: models.CharField = models.CharField(max_length=254, default="None")
 
