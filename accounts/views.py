@@ -1,15 +1,12 @@
-from django.core.exceptions import ValidationError
-from django.contrib.auth import login, logout, get_user_model
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.utils.safestring import mark_safe
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django import forms
+from django.contrib import messages
+from django.contrib.auth import get_user_model, login, logout
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.shortcuts import redirect, render
+from django.utils.safestring import mark_safe
 
-
-from main.models import Teacher, CustomUser
 from accounts.forms import LoginForm
-
+from main.models import CustomUser, Teacher
 
 # Create your views here.
 
@@ -31,7 +28,7 @@ def login_view(request: HttpRequest) -> HttpResponse | HttpResponseRedirect:
 
             if user.check_password(password):
                 login(request, user)
-                if user.user_type is "teacher" or "chef":
+                if user.user_type == "teacher" or user.user_type == "chef":
                     return redirect("main:dashboard")
                 elif user.is_staff:
                     return redirect("/admin/")

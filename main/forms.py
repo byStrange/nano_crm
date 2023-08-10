@@ -1,10 +1,11 @@
-from django import forms
-from django.db.models.query import QuerySet
-from django.db import models
-
 from typing import Dict, List, Tuple
 
-from main.models import Class, Course, Student, Teacher, time_slots, DAYS_OF_WEEK
+from django import forms
+from django.db import models
+from django.db.models.query import QuerySet
+
+from main.models import (DAYS_OF_WEEK, Class, Course, Student, Teacher,
+                         time_slots)
 
 DEFAULT_INPUT_ATTRS: Dict[str, str] = {"class": "form-control"}
 Fields = List[str] | Tuple[str]

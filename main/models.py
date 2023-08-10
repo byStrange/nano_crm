@@ -1,8 +1,8 @@
-from django.db import models
-from django.contrib.auth.models import AbstractUser
 import uuid
+from typing import Literal, Tuple, Type
 
-from typing import Type, Tuple
+from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 Choices = Tuple[Tuple[str, str]]
 
