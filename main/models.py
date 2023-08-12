@@ -2,7 +2,7 @@ import uuid
 from typing import Literal, Tuple, Type
 from datetime import datetime
 
-from django.contrib.auth.models import AbstractUser, AbstractBaseUser
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
@@ -24,12 +24,12 @@ DAYS_OF_WEEK = (
 )
 
 
-class CustomUser(AbstractBaseUser):
+class CustomUser(AbstractUser):
     USER_TYPES = (
         ("chef", "Chef of Department"),
         ("teacher", "Teacher"),
     )
-    user_type: models.CharField[str | None] = models.CharField(
+    user_type = models.CharField(
         max_length=10, choices=USER_TYPES, blank=True, null=True
     )
 
@@ -43,33 +43,33 @@ class CustomUser(AbstractBaseUser):
 
 
 class TimeStampedModel(models.Model):
-    created_at: models.DateTimeField[datetime] = models.DateTimeField(auto_now_add=True)
-    updated_at: models.DateTimeField[datetime] = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract: bool = True
 
 
 class Dept(models.Model):
-    name: models.CharField[str] = models.CharField(max_length=200, unique=True)
+    name = models.CharField(max_length=200, unique=True)
 
     def __str__(self):
         return self.name
 
 
 class Course(models.Model):
-    dept: models.ForeignKey[Dept] = models.ForeignKey(Dept, on_delete=models.CASCADE)
-    name: models.CharField[str] = models.CharField(max_length=50)
-    shortname: models.CharField[str] = models.CharField(max_length=50, default="X")
+    dept = models.ForeignKey(Dept, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    shortname = models.CharField(max_length=50, default="X")
 
     def __str__(self):
         return self.name
 
 
 class Class(models.Model):
-    dept: models.ForeignKey[Dept] = models.ForeignKey(Dept, on_delete=models.CASCADE)
-    name: models.CharField[str] = models.CharField(max_length=100)
-    day: models.CharField[str] = models.CharField(max_length=254)
+    dept = models.ForeignKey(Dept, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    day = models.CharField(max_length=254)
 
     class Meta:
         verbose_name_plural: str = "classes"
@@ -79,19 +79,11 @@ class Class(models.Model):
 
 
 class Assign(models.Model):
-    class_id: models.ForeignKey[Class] = models.ForeignKey(
-        Class, on_delete=models.CASCADE
-    )
-    course: models.ForeignKey[Course] = models.ForeignKey(
-        "Course", on_delete=models.CASCADE
-    )
-    teacher: models.ForeignKey = models.ForeignKey("Teacher", on_delete=models.CASCADE)
-    period: models.CharField[str] = models.CharField(
-        max_length=50, choices=time_slots, default="11: - 11:50"
-    )
-    day: models.CharField[str] = models.CharField(
-        max_length=50, default='["Monday", "Wednesday", "Friday"]'
-    )
+    class_id = models.ForeignKey(Class, on_delete=models.CASCADE)
+    course = models.ForeignKey("Course", on_delete=models.CASCADE)
+    teacher = models.ForeignKey("Teacher", on_delete=models.CASCADE)
+    period = models.CharField(max_length=50, choices=time_slots, default="11: - 11:50")
+    day = models.CharField(max_length=50, default='["Monday", "Wednesday", "Friday"]')
 
     class Meta:
         unique_together = (("course", "class_id", "teacher"),)
@@ -103,11 +95,9 @@ class Assign(models.Model):
 
 
 class AttendanceClass(models.Model):
-    assign: models.ForeignKey[Assign] = models.ForeignKey(
-        Assign, on_delete=models.CASCADE
-    )
-    date: models.DateTimeField[datetime] = models.DateTimeField(auto_now_add=True)
-    status: models.IntegerField[int] = models.IntegerField(default=0)
+    assign = models.ForeignKey(Assign, on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now_add=True)
+    status = models.IntegerField(default=0)
 
     class Meta:
         verbose_name: str = "Attendance"
@@ -120,28 +110,20 @@ class Student(models.Model):
         ("contract", "Kontrakt"),
         ("free", "Free"),
     )
-    id: models.UUIDField[uuid.UUID] = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    full_name: models.CharField[str] = models.CharField(max_length=100)
-    group: models.ForeignKey[Class | None] = models.ForeignKey(
-        Class, on_delete=models.CASCADE, blank=True, null=True
-    )
-    course: models.ForeignKey[Course] = models.ForeignKey(
-        "Course", on_delete=models.CASCADE
-    )
-    address: models.TextField[str] = models.TextField(
-        max_length=254, default="Uzbekistan"
-    )
-    coins: models.IntegerField[int] = models.IntegerField(default=0)
-    phone_numbers: models.CharField[str] = models.CharField(max_length=254)
-    condition: models.CharField[str] = models.CharField(
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    full_name = models.CharField(max_length=100)
+    group = models.ForeignKey(Class, on_delete=models.CASCADE, blank=True, null=True)
+    course = models.ForeignKey("Course", on_delete=models.CASCADE)
+    address = models.TextField(max_length=254, default="Uzbekistan")
+    coins = models.IntegerField(default=0)
+    phone_numbers = models.CharField(max_length=254)
+    condition = models.CharField(
         choices=CONDITION_CHOICES,
         default="normal",
         max_length=10,
     )
 
-    user: models.OneToOneField[CustomUser | None] = models.OneToOneField(
+    user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, blank=True, null=True
     )
 
@@ -150,38 +132,30 @@ class Student(models.Model):
 
 
 class Chef(models.Model):
-    id: models.UUIDField[uuid.UUID] = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    dept: models.ForeignKey[Dept] = models.ForeignKey(Dept, on_delete=models.CASCADE)
-    full_name: models.CharField[str] = models.CharField(max_length=254)
-    user: models.OneToOneField[CustomUser] = models.OneToOneField(
-        CustomUser, on_delete=models.CASCADE
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    dept = models.ForeignKey(Dept, on_delete=models.CASCADE)
+    full_name = models.CharField(max_length=254)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
         return self.full_name + " - " + self.dept.name
 
 
 class Teacher(models.Model):
-    id: models.UUIDField[uuid.UUID] = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     WORKING_DAYS_CHOICES = (
         ("workingdays", "ish kunlari"),
         ("everyotherday", "kun oralab"),
     )
-    dept: models.ForeignKey[Dept] = models.ForeignKey("Dept", on_delete=models.CASCADE)
-    full_name: models.CharField[str] = models.CharField(max_length=100)
-    working_days: models.CharField[str] = models.CharField(
-        max_length=254, choices=WORKING_DAYS_CHOICES
-    )
-    working_time: models.CharField[str] = models.CharField(max_length=254)
-    courses: models.ManyToManyField = models.ManyToManyField("Course", blank=True)
-    address: models.CharField = models.CharField(max_length=254, default="Andijon")
-    phone_numbers: models.CharField = models.CharField(max_length=254, default="None")
+    dept = models.ForeignKey("Dept", on_delete=models.CASCADE)
+    full_name = models.CharField(max_length=100)
+    working_days = models.CharField(max_length=254, choices=WORKING_DAYS_CHOICES)
+    working_time = models.CharField(max_length=254)
+    courses = models.ManyToManyField("Course", blank=True)
+    address = models.CharField(max_length=254, default="Andijon")
+    phone_numbers = models.CharField(max_length=254, default="None")
 
-    user: models.OneToOneField[CustomUser | None] = models.OneToOneField(
+    user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, blank=True, null=True
     )
 
@@ -190,14 +164,10 @@ class Teacher(models.Model):
 
 
 class Attendance(models.Model):
-    student: models.ForeignKey[Student] = models.ForeignKey(
-        "Student", on_delete=models.CASCADE
-    )
-    is_present: models.BooleanField[bool] = models.BooleanField(default=False)
-    attendance_class: models.ForeignKey[AttendanceClass] = models.ForeignKey(
-        AttendanceClass, on_delete=models.CASCADE
-    )
-    updated_at: models.DateTimeField[datetime] = models.DateTimeField(auto_now=True)
+    student = models.ForeignKey("Student", on_delete=models.CASCADE)
+    is_present = models.BooleanField(default=False)
+    attendance_class = models.ForeignKey(AttendanceClass, on_delete=models.CASCADE)
+    updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.student} - {self.attendance_class}"
