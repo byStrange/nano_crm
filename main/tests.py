@@ -19,7 +19,7 @@ class UpdateOrCreateAttendanceTest(TestCase):
         group: Class = Class.objects.create(
             dept=dept, name="G1", day="Monday, Tuesday, Wednesday"
         )
-        user: User = User.objects.create(
+        user = User.objects.create(
             username="rakhmatullo", password="Abcd1234!", user_type="teacher"
         )
         teacher: Teacher = Teacher.objects.create(
@@ -62,7 +62,7 @@ class UpdateOrCreateAttendanceTest(TestCase):
         result = _update_or_create_attendance(
             attendance_list=attendance_list,
             students=students,
-            attendance_class=attendance_class,
+            attendance_class=attendance_class, # type: ignore
         )
 
         self.assertFalse(result)
@@ -74,7 +74,7 @@ class UpdateOrCreateAttendanceTest(TestCase):
         }
 
         result = _update_or_create_attendance(
-            attendance_list=attendance_list, students=students, attendance_class=None
+            attendance_list=attendance_list, students=students, attendance_class=None # type: ignore
         )
 
         self.assertTrue(result)

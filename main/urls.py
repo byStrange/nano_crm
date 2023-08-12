@@ -3,13 +3,23 @@ from typing import List
 from django.shortcuts import redirect
 from django.urls import path
 
-from main.views import (GroupsView, delete_teacher, group, index, move_student,
-                        register_student, students_view, take_attendance,
-                        teacher, teachers)
+from main.views import (
+    GroupsView,
+    delete_teacher,
+    group,
+    index,
+    move_student,
+    register_student,
+    students_view,
+    take_attendance,
+    teacher,
+    teachers,
+    student_view,
+)
 
 app_name: str = "main"
 
-urlpatterns: List[path] = [
+urlpatterns: List = [
     path("", lambda request: redirect("main:dashboard"), name="dashboard"),
     path("dashboard/", index, name="dashboard"),
     path("groups/", GroupsView.as_view(), name="groups"),
@@ -22,5 +32,10 @@ urlpatterns: List[path] = [
     # student related
     path("register/", register_student, name="register_student"),
     path("students/", students_view, name="students"),
-    path("students/<uuid:student_id>/move/<int:class_id>/", move_student, name="move_student"),
+    path("students/<uuid:student_id>/", student_view, name="student"),
+    path(
+        "students/<uuid:student_id>/move/<int:class_id>/",
+        move_student,
+        name="move_student",
+    ),
 ]

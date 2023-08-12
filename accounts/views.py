@@ -1,7 +1,12 @@
 from django import forms
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponsePermanentRedirect,
+    HttpResponseRedirect,
+)
 from django.shortcuts import redirect, render
 from django.utils.safestring import mark_safe
 
@@ -12,7 +17,7 @@ from main.models import CustomUser, Teacher
 
 
 def login_view(request: HttpRequest) -> HttpResponse | HttpResponseRedirect:
-    User: CustomUser = get_user_model()
+    User = get_user_model()
     if request.method == "POST":
         if request.user.is_authenticated:
             return redirect("main:dashboard")
@@ -21,16 +26,16 @@ def login_view(request: HttpRequest) -> HttpResponse | HttpResponseRedirect:
             username: str = form.cleaned_data["username"]
             password: str = form.cleaned_data["password"]
             try:
-                user: CustomUser = User.objects.get(username=username)
+                user = User.objects.get(username=username)
             except User.DoesNotExist:
                 messages.error(request, mark_safe("user not found with this username"))
                 return redirect("accounts:login")
 
             if user.check_password(password):
                 login(request, user)
-                if user.user_type == "teacher" or user.user_type == "chef":
+                if user.user_type == "teacher" or user.user_type == "chef":  # type: ignore
                     return redirect("main:dashboard")
-                elif user.is_staff:
+                elif user.is_staff:  # type: ignore
                     return redirect("/admin/")
             else:
                 messages.error(request, "Given password for this user is incorrect")
@@ -43,7 +48,9 @@ def login_view(request: HttpRequest) -> HttpResponse | HttpResponseRedirect:
     return render(request, "accounts/login.html", {"form": form})
 
 
-def logout_view(request: HttpRequest) -> HttpResponseRedirect:
+def logout_view(
+    request: HttpRequest,
+) -> HttpResponseRedirect | HttpResponsePermanentRedirect:
     if request.user.is_authenticated:
         logout(request)
         return redirect("accounts:login")

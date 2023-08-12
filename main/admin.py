@@ -6,13 +6,21 @@ from django.db import models
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 
-from main.models import (Assign, Attendance, AttendanceClass, Chef, Class,
-                         Course, CustomUser, Dept, Student, Teacher)
+from main.models import (
+    Assign,
+    Attendance,
+    AttendanceClass,
+    Chef,
+    Class,
+    Course,
+    CustomUser,
+    Dept,
+    Student,
+    Teacher,
+)
 
-ListDisplay = List[str] | Tuple[str]
 
 models = [Class, Student, Teacher, Assign, AttendanceClass, Course, Dept, Chef]
-
 
 
 class CustomUserAdmin(UserAdmin):
@@ -28,12 +36,12 @@ class CustomUserAdmin(UserAdmin):
             None,
             {"fields": ("user_type",)},
         ),
-    )
+    )  # type: ignore
 
 
 class AttendanceAdmin(admin.ModelAdmin):
-    list_display: ListDisplay = ("student", "is_present", "attendance_class")
-    list_select_related: ListDisplay = ("student", "attendance_class__assign")
+    list_display = ("student", "is_present", "attendance_class")
+    list_select_related = ("student", "attendance_class__assign")
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         return (

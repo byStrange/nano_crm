@@ -9,8 +9,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
 from django.forms import Form
-from django.http import (HttpRequest, HttpResponse, HttpResponseForbidden,
-                         HttpResponseRedirect, JsonResponse)
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseForbidden,
+    HttpResponseRedirect,
+    HttpResponsePermanentRedirect,
+    JsonResponse,
+)
 from django.shortcuts import redirect, render
 from django.template.defaulttags import register
 from django.utils import timezone
@@ -18,13 +24,18 @@ from django.utils.safestring import mark_safe
 from django.views import View
 
 from main.forms import CreateClassForm, CreateTeacherForm, RegisterStudentForm
-from main.models import (Assign, Attendance, AttendanceClass, Class, Course,
-                         Dept, Student, Teacher)
+from main.models import (
+    Assign,
+    Attendance,
+    AttendanceClass,
+    Class,
+    Course,
+    Dept,
+    Student,
+    Teacher,
+)
 
 # a = ContentType.objects.get_for_id()
-
-
-
 
 
 @register.filter(name="split")
@@ -56,7 +67,7 @@ class GroupsView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
         form: Form = self.form_class()
         assign_objects = (
-            Assign.objects.filter(teacher=request.user.teacher)
+            Assign.objects.filter(teacher=request.user.teacher)  # type: ignore
             .prefetch_related("class_id", "course", "teacher")
             .all()
         )
@@ -69,7 +80,7 @@ class GroupsView(View):
             },
         )
 
-    def post(self, request: HttpRequest) -> HttpResponse:
+    def post(self, request: HttpRequest) -> HttpResponse | ValidationError:
         form: Form = self.form_class(request.POST)
         if form.is_valid():
             return self.handle_valid_form(form, request)
@@ -78,23 +89,25 @@ class GroupsView(View):
             groups: QuerySet[Class] = Class.objects.all()
             return render(request, self.template_name, {"groups": groups, "form": form})
 
-    def handle_valid_form(self, form: Form, request: HttpRequest) -> HttpResponse:
+    def handle_valid_form(
+        self, form: Form, request: HttpRequest
+    ) -> HttpResponse | ValidationError:
         group: Class = Class(
             name=form.cleaned_data["name"], day=form.cleaned_data["day"]
         )
-        if not request.user.is_staff:
+        if not request.user.is_staff:  # type: ignore
             return self.create_teacher_group(form, group, request)
         else:
             return self.handle_staff_error()
 
     def create_teacher_group(
         self, form: Form, group: Class, request: HttpRequest
-    ) -> HttpResponseRedirect:
+    ) -> HttpResponseRedirect | HttpResponsePermanentRedirect:
         course_id: int = form.cleaned_data["course"]
-        teacher: Teacher = Teacher.objects.get(user__username=request.user.username)
+        teacher: Teacher = Teacher.objects.get(user__username=request.user.username)  # type: ignore
         course: Course = Course.objects.get(id=course_id)
 
-        group.dept: Dept = teacher.dept
+        group.dept = teacher.dept
         group.save()
 
         assign: Assign = Assign(
@@ -126,7 +139,7 @@ def group(request: HttpRequest, assign_id: int) -> HttpResponse:
     assign: Assign = Assign.objects.select_related("class_id").get(id=assign_id)
     attendance_class_queryset: QuerySet[
         AttendanceClass
-    ] = AttendanceClass.objects.filter(date__date=now.date(), assign=assign)
+    ] | None = AttendanceClass.objects.filter(date__date=now.date(), assign=assign)
     course_period: str = assign.period
     course_start_time_str, course_end_time_str = course_period.split(" - ")
     course_start_time, course_end_time = [
@@ -138,12 +151,10 @@ def group(request: HttpRequest, assign_id: int) -> HttpResponse:
         period_end = True
     if attendance_class_queryset.exists():
         attendance_class_exists = True
-        attendance_class: AttendanceClass = attendance_class_queryset.first()
-        attendances: QuerySet[
-            Attendance
-        ] = attendance_class.attendance_set.select_related("student").all()
+        attendance_class: AttendanceClass | None = attendance_class_queryset.first()
+        attendances = attendance_class.attendance_set.select_related("student").all()  # type: ignore
 
-    students: QuerySet[Student] = assign.class_id.student_set.all()
+    students: QuerySet[Student] = assign.class_id.student_set.all()  # type: ignore
     print(period_end)
     return render(
         request,
@@ -183,7 +194,7 @@ def take_attendance(request: HttpRequest, assign_id: int) -> JsonResponse:
                     {"error": "Cannot update attendance outside of course period"}
                 )
             if attendance_class_queryset.exists():
-                attendance_class: AttendanceClass = attendance_class_queryset.first()
+                attendance_class: AttendanceClass = attendance_class_queryset.first() # type: ignore
                 _update_or_create_attendance(
                     attendance_list=attendance_list,
                     students=students,
@@ -204,6 +215,7 @@ def take_attendance(request: HttpRequest, assign_id: int) -> JsonResponse:
             return JsonResponse({"error": "Invalid JSON data"}, status=400)
         except Assign.DoesNotExist:
             return JsonResponse({"error": "group does not exists"}, status=400)
+    return JsonResponse({"error": "Only POST method allowed"})
 
 
 def _update_or_create_attendance(
@@ -213,7 +225,7 @@ def _update_or_create_attendance(
 ) -> bool:
     try:
         if attendance_class is None:
-            assign = students.first().group.assign_set.first()
+            assign = students.first().group.assign_set.first()  # type: ignore
             attendance_class = AttendanceClass(assign=assign)
             attendance_class.save()
 
@@ -238,25 +250,22 @@ def teachers(request: HttpRequest) -> HttpResponse:
     # if not request.user.is_staff:
     # return redirect("main:dashboard")
     if request.method == "POST":
-        form: Form = CreateTeacherForm(request.POST)
+        form: CreateTeacherForm = CreateTeacherForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect("main:teachers")
-        else:
-            print(form.errors)
-            return
-    form: Form = CreateTeacherForm()
+    form: CreateTeacherForm = CreateTeacherForm()
     teachers: QuerySet[Teacher] = Teacher.objects.all()
     return render(request, "main/teachers.html", {"teachers": teachers, "form": form})
 
 
 @login_required
 def register_student(request: HttpRequest) -> HttpResponse | HttpResponseRedirect:
-    if request.user.is_staff:
+    if request.user.is_staff:  # type: ignore
         return HttpResponseForbidden()
     if request.method == "POST":
         print(request.POST)
-        form: Form = RegisterStudentForm(request.POST)
+        form: RegisterStudentForm = RegisterStudentForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect("main:register_student")
@@ -266,12 +275,12 @@ def register_student(request: HttpRequest) -> HttpResponse | HttpResponseRedirec
                 mark_safe(form.errors),
             )
             return redirect("main:register_student")
-    teacher: Teacher = request.user.teacher
+    teacher: Teacher = request.user.teacher  # type: ignore
     students: QuerySet[Student] = Student.objects.filter(
         group=None, course__dept=teacher.dept
     ).select_related("course")
     groups: QuerySet[Class] = Class.objects.filter(dept=teacher.dept)
-    form: Form = RegisterStudentForm(teacher=teacher)
+    form: RegisterStudentForm = RegisterStudentForm(teacher=teacher)
     return render(
         request,
         "main/register_student.html",
@@ -279,21 +288,26 @@ def register_student(request: HttpRequest) -> HttpResponse | HttpResponseRedirec
     )
 
 
+@login_required  # type: ignore
+def student_view(request: HttpRequest, student_id: str):
+    student = Student.objects.get(id=student_id)
+    return JsonResponse({})
+
 @login_required
-def students_view(request: HttpResponse) -> HttpResponse | HttpResponseForbidden:
-    if request.user.is_staff:
+def students_view(request: HttpRequest) -> HttpResponse | HttpResponseForbidden:
+    if request.user.is_staff:  # type: ignore
         return HttpResponseForbidden()
-    teacher: Teacher = request.user.teacher
+    teacher: Teacher = request.user.teacher  # type: ignore
     students: QuerySet[Student] = Student.objects.filter(
         group__dept=teacher.dept, course__dept=teacher.dept
     )
     context = {"students": students, "teacher": teacher}
-    # return render(request, "template_name")
+    return render(request, "template_name")
 
 
-@login_required
+@login_required  # type: ignore
 def delete_teacher(request: HttpRequest, teacher_id: int):
-    pass
+    return JsonResponse({})
 
 
 @login_required
@@ -306,12 +320,12 @@ def move_student(
     except Student.DoesNotExist or Class.DoesNotExist:
         messages.error(request, "something has burned up")
         return JsonResponse({"error": "either student or group object not found"})
-    student.group: Class = group
+    student.group = group
     student.save()
     messages.success(
         request,
         mark_safe(
-            f'{student.full_name} <a href="/groups/{group.id}">{group.name}</a> guruhiga muvaffaqiyatli ko\'chirildi.'
+            f'{student.full_name} <a href="/groups/{group.id}">{group.name}</a> guruhiga muvaffaqiyatli ko\'chirildi.'  # type: ignore
         ),
     )
     return JsonResponse({"success": True})

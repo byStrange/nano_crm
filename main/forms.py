@@ -4,8 +4,7 @@ from django import forms
 from django.db import models
 from django.db.models.query import QuerySet
 
-from main.models import (DAYS_OF_WEEK, Class, Course, Student, Teacher,
-                         time_slots)
+from main.models import DAYS_OF_WEEK, Class, Course, Student, Teacher, time_slots
 
 DEFAULT_INPUT_ATTRS: Dict[str, str] = {"class": "form-control"}
 Fields = List[str] | Tuple[str]
@@ -31,7 +30,7 @@ class CreateClassForm(forms.Form):
 
 class CreateTeacherForm(forms.ModelForm):
     class Meta:
-        model: models.Model = Teacher
+        mode = Teacher
         fields: Fields = [
             "full_name",
             "working_days",
@@ -55,12 +54,10 @@ class RegisterStudentForm(forms.ModelForm):
         teacher: Teacher | None = kwargs.pop("teacher", None)
         super().__init__(*args, **kwargs)
         if teacher:
-            self.fields["course"].queryset: QuerySet = Course.objects.filter(
-                dept=teacher.dept
-            )
+            self.fields["course"].queryset = Course.objects.filter(dept=teacher.dept)
 
     class Meta:
-        model: models.Model = Student
+        model = Student
         fields: Fields = [
             "full_name",
             "address",
