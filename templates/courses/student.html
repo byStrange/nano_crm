@@ -1,0 +1,172 @@
+{% extends "./base.html" %} {% block title %} Student - {{ student.full_name }}
+{% endblock title %} {% block content %}
+<div class="container py-3" style="height: 100vh; overflow: auto">
+  {% if messages %} {% for message in messages %}
+  <div
+    class="alert alert-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}danger{%elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS%}success{% endif %} alert-dismissible fade show"
+    role="alert"
+  >
+    {{ message }}
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  {% endfor %} {% endif %}
+  <div class="d-flex align-items-center gap-2">
+    <h1 class="text-primary">{{ student.full_name }}</h1>
+    -
+    <div>
+      {% for group in student.groups.all %}<span class="badge text-bg-primary"
+        >{{ group.name }}</span
+      >
+      {% endfor %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="d-flex card-header align-items-center justify-content-between">
+      <h4>Update student</h4>
+      <button
+        class="btn btn-link"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapseBody"
+        aria-expanded="false"
+        aria-controls="collapseBody"
+      >
+        Toggle
+      </button>
+    </div>
+    <div
+      id="collapseBody"
+      class="collapse"
+      aria-labelledby="collapseHeader"
+    >
+      <div class="card-body">
+        <form action="" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="updzate">
+          <div class="row">
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.full_name.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.full_name.auto_id}}"
+                >{{form.full_name.label}}</label
+              >
+              {{ form.full_name }}
+            </div>
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.address.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.address.auto_id}}"
+                >{{ form.address.label }}</label
+              >
+              {{ form.address }}
+            </div>
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.address.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.groups.auto_id}}"
+                >{{ form.groups.label }}</label
+              >
+              {{ form.groups }}
+            </div>
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.phone_numbers.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.phone_numbers.auto_id}}"
+                >{{ form.phone_numbers.label }}</label
+              >
+              {{ form.phone_numbers }}
+            </div>
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.course.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.course.auto_id}}"
+                >{{ form.course.label }}</label
+              >
+              {{ form.course }}
+            </div>
+            <div
+              class="col-lg-6 col-md-12 col-sm-12 mb-2 {% if form.condition.field.required %}required-field{% endif %}"
+            >
+              <label for="{{form.condition.auto_id}}"
+                >{{ form.condition.label }}</label
+              >
+              {{ form.condition }}
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="mt-5">
+    <h3 class="text-secondary">Payment history</h3>
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Payment id</th>
+          <th scope="col">Date</th>
+          <th scope="col">Amount</th>
+          <th scope="col">Group</th>
+          <th scope="col">Approved</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment_info in payments %}
+        <tr>
+          <th scope="row"> {{ forloop.counter }} </th>
+          <td>{{ payment_info.id }}</td>
+          <td>{{  payment_info.created_at }}</td>
+          <td>{{ payment_info.amount }}UZS</td>
+          <td><a href="#">{{ payment_info.assign.class_id.name }}</a></td>
+          <td>{{ payment_info.approved }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="d-flex card-header align-items-center justify-content-between">
+      <h4>Create payment</h4>
+      <button
+        class="btn btn-link"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#formBody"
+        aria-expanded="false"
+        aria-controls="formBody"
+      >
+        Toggle
+      </button>
+    </div>
+    <div
+      id="formBody"
+      class="collapse show"
+      aria-labelledby="collapseHeader"
+    >
+      <div class="card-body">
+       <form action="" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="payment">
+        {{ payment_form }}
+        <button class="btn btn-primary">Create</button>
+       </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block script %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    new Choices("#id_course");
+    new Choices("#id_condition");
+    new Choices("#id_groups");
+    new Choices("#id_assign")
+  });
+</script>
+{% endblock script %}

@@ -1,5 +1,5 @@
-{% extends "./base.html" %} {% block content %}
-<div class="container">
+{% extends "./base.html" %} {% block title %} NANO - O'qituvchilar {% endblock title %} {% block content %}
+<div class="container py-3" style="height: 100vh; overflow: auto">
   <div class="row align-items-center">
     {% if messages %} {% for message in messages %}
     <div
@@ -14,58 +14,71 @@
         aria-label="Close"
       ></button>
     </div>
-    {% endfor %} {% endif %} {% for assign in assign_objects %}
+    {% endfor %} {% endif %} 
+    {% for teacher in teachers %}
     <div class="col-lg-3 col-md-4 col-sm-6">
       <div class="card border-success mb-3" style="max-width: 18rem">
         <div class="card-header bg-transparent border-success">
-          {{ assign.day|parse:"0" }}, {{ assign.period }}
+          {{teacher.get_working_days_display }}, {{teacher.working_time}}
         </div>
         <div class="card-body">
-          <h5 class="card-title">{{ assign.class_id.name }}</h5>
+          <h5 class="card-title">{{ teacher.full_name}}</h5>
+          {% if teacher.assign_set.all|length %}
           <p class="card-text">
-            <b>Yo'nalish: </b>
-            <span><a href="#">{{ assign.course.name}}</a></span>
-            <br />
-            <b>O'qituvchi: </b>
-            <span><a href="#">{{ assign.teacher.full_name }}</a></span>
+           <b>Guruhlari: </b>
+            <span>
+              {% for assign in teacher.assign_set.all %}
+              <a href="{% url 'courses:group' assign.id %}" class="badge text-bg-primary"
+                >{{ assign.class_id }}</a
+              >
+              {% endfor %}
+            </span>
           </p>
+          {% else %}
+            <p class="text-muted mb-0">Guruhlari yo'q</p>
+            {% endif %}
         </div>
-        <div class="card-footer bg-transparent border-success">
-          <a href="{% url 'main:group' assign.id %}" class="btn btn-outline-primary">Batafsil </a>
+        <div class="card-footer bg-transparent border-success d-flex gap-2 flex-wrap">
+          <a
+            href="{% url 'courses:teacher' teacher.id %}"
+            class="btn btn-outline-primary"
+            >Batafsil
+          </a>
+          <form action="{% url 'courses:delete_teacher' teacher.id %}" method="post"> {% csrf_token %} <button class="btn btn-danger" type="submit">Delete</button> </form>
         </div>
       </div>
     </div>
-    {% endfor%}
-
+    {% endfor %}
     <div class="col-lg-3 col-md-4 col-sm-6">
       <button
         type="button"
         class="btn btn-outline-secondary"
         data-bs-toggle="modal"
-        data-bs-target="#addGroupModal"
+        data-bs-target="#addTeacherModal"
       >
         <div
           class="d-flex justify-content-center align-items-center flex-column"
         >
           <span class="plus-icon" style="font-size: 50px">+</span>
-          Guruh yaratish
+          O'qituvchi qo'shish
         </div>
       </button>
     </div>
   </div>
 </div>
-
 <div
   class="modal fade"
-  id="addGroupModal"
+  id="addTeacherModal"
   tabindex="-1"
-  aria-labelledby="addGroupModalLabel"
+  aria-labelledby="addTeacherModalLabel"
   aria-hidden="true"
 >
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="addGroupModalLabel">Guruh qo'shish</h1>
+        <h1 class="modal-title fs-5" id="addTeacherModalLabel">
+          O'qituvchi qo'shish
+        </h1>
         <button
           type="button"
           class="btn-close"
@@ -73,37 +86,30 @@
           aria-label="Close"
         ></button>
       </div>
+      <form action="{% url 'courses:teachers' %}" method="post">
       <div class="modal-body">
-        <form action="" method="post">{% csrf_token %} {{ form }}</form>
+        {% csrf_token %} {{ form }}
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Bekor qilish
         </button>
         <button
-          type="button"
+          type="submit"
           class="btn btn-primary"
-          onclick="document.forms[0].submit()"
-        >
+          >
           Yaratish
         </button>
       </div>
+    </form>
     </div>
   </div>
 </div>
 {% endblock content %} {% block script %}
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    const configs = [
-      {},
-      {},
-      { noChoicesText: "No choices to choose from <a href=\"#\">Create a new course</a>" },
-    ];
-    const selector = document
-      .querySelectorAll("select")
-      .forEach((select, index) => {
-        const choices = new Choices(select, configs[index]);
-      });
+    new Choices("#id_courses");
+    new Choices("#id_working_days");
   });
 </script>
 {% endblock %}

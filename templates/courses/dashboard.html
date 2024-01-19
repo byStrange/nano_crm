@@ -1,0 +1,83 @@
+{% extends './base.html' %} {% block title %} Dashboard {% endblock %} {% block content %}
+<div class="container py-3" style="height: 100vh; overflow: auto">
+  <div class="row">
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="card">
+        <div class="card-header">Guruhlar</div>
+        <div class="card-body">
+          <div
+            class="box"
+            style="
+              opacity: 0.5;
+              color: #151515;
+              text-align: center;
+              font-size: 40px;
+            "
+          >
+            <span>{{ teacher_assigns|length }}ta</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary stretched-link">Batafsil</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="card">
+        <div class="card-header">Oylik</div>
+        <div class="card-body">
+          <div
+            class="box"
+            style="
+              opacity: 0.5;
+              color: #151515;
+              text-align: center;
+              font-size: 40px;
+            "
+          >
+            <span class="text-success">{{total_salary}} UZS</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary stretched-link">Batafsil</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="card">
+        <div class="card-header">O'quvchilaringiz soni</div>
+        <div class="card-body">
+          <div
+            class="d-flex flex-column"
+            style="color: #151515; text-align: center"
+          >
+            <span class="text-primary" style="font-size: 40px"
+              >{{ students_length }}ta</span
+            >
+          </div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary stretched-link">Batafsil</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="card">
+        <div class="card-header">Davomat</div>
+        <div class="card-body">
+          <div
+            class="d-flex flex-column"
+            style="color: #151515; text-align: center"
+          >
+            <span class="text-danger" style="font-size: 40px">2</span>
+            <span class="text-muted">ta guruhdan davomat olinmadi</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="btn btn-primary stretched-link">Batafsil</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content%}

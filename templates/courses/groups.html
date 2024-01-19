@@ -1,0 +1,120 @@
+{% extends "./base.html" %} {% block content %}
+<div class="container py-3" style="height: 100vh; overflow: auto">
+  <div class="row align-items-center">
+    {% if messages %} {% for message in messages %}
+    <div
+      class="alert alert-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}danger{%elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS%}success{% endif %} alert-dismissible fade show"
+      role="alert"
+    >
+      {{ message }}
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+      ></button>
+    </div>
+    {% endfor %} {% endif %} {% for assign in assign_objects %}
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <div class="card border-success mb-3" style="max-width: 18rem">
+        <div class="card-header bg-transparent border-success">
+          {{ assign.day|parse:"0" }}, {{ assign.period }}
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">{{ assign.class_id.name }}</h5>
+          <p class="card-text">
+            <b>Yo'nalish: </b>
+            <span
+              ><a href="{% url 'courses:course' assign.course.id %}"
+                >{{ assign.course.name}}</a
+              ></span
+            >
+            <br />
+            <b>O'qituvchi: </b>
+            <span><a href="{% url 'courses:teacher' assign.teacher.id %}">{{ assign.teacher.full_name }}</a></span>
+          </p>
+        </div>
+        <div class="card-footer bg-transparent border-success">
+          <a
+            href="{% url 'courses:group' assign.id %}"
+            class="btn btn-outline-primary"
+            >Batafsil
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor%} {% if request.user.user_type == "chef" %}
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        data-bs-toggle="modal"
+        data-bs-target="#addGroupModal"
+      >
+        <div
+          class="d-flex justify-content-center align-items-center flex-column"
+        >
+          <span class="plus-icon" style="font-size: 50px">+</span>
+          Guruh yaratish
+        </div>
+      </button>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div
+  class="modal fade"
+  id="addGroupModal"
+  tabindex="-1"
+  aria-labelledby="addGroupModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="addGroupModalLabel">Guruh qo'shish</h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form action="" method="post">{% csrf_token %} {{ form }}</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Bekor qilish
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="document.forms[0].submit()"
+        >
+          Yaratish
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %} {% block script %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const configs = [
+      {},
+      {},
+      {
+        noChoicesText:
+          'No choices to choose from <a href="#">Create a new course</a>',
+      },
+    ];
+    const selector = document
+      .querySelectorAll("select")
+      .forEach((select, index) => {
+        const choices = new Choices(select, configs[index]);
+      });
+  });
+</script>
+{% endblock %}

@@ -5,9 +5,10 @@ from django.contrib.auth import get_user_model
 from django.db.models import QuerySet as Q
 from django.test import TestCase
 
-from main.models import (Assign, Attendance, AttendanceClass, Class, Course,
-                         Dept, Student, Teacher)
-from main.views import _update_or_create_attendance
+from core.models import Course, Dept
+from accounts.models import Teacher
+from courses.models import (Assign, Attendance, AttendanceClass, Class, Student)
+from courses.views import _update_or_create_attendance
 
 User = get_user_model()
 
@@ -29,26 +30,39 @@ class UpdateOrCreateAttendanceTest(TestCase):
             working_time="12:00",
             user=user,
         )
-        assign: Assign= Assign.objects.create(
+        assign: Assign = Assign.objects.create(
             class_id=group, course=course, teacher=teacher
         )
-        AttendanceClass.objects.create(
-            date=datetime.now().date(), assign=assign
+        AttendanceClass.objects.create(date=datetime.now().date(), assign=assign)
+        Student.objects.create(
+            full_name="John Doe",
+            course=course,
+            phone_numbers="+xx xxx xx xx",
+            group=group,
         )
         Student.objects.create(
-            full_name="John Doe", course=course, phone_numbers="+xx xxx xx xx", group=group
+            full_name="Sugar Momma",
+            course=course,
+            phone_numbers="+xx xxx xx xx",
+            group=group,
         )
         Student.objects.create(
-            full_name="Sugar Momma", course=course, phone_numbers="+xx xxx xx xx", group=group
+            full_name="White Scout",
+            course=course,
+            phone_numbers="+xx xxx xx xx",
+            group=group,
         )
         Student.objects.create(
-            full_name="White Scout", course=course, phone_numbers="+xx xxx xx xx", group=group
+            full_name="Count Dooku",
+            course=course,
+            phone_numbers="+xx xxx xx xx",
+            group=group,
         )
         Student.objects.create(
-            full_name="Count Dooku", course=course, phone_numbers="+xx xxx xx xx", group=group
-        )
-        Student.objects.create(
-            full_name="Dick Ramdass", course=course, phone_numbers="+xx xxx xx xx", group=group
+            full_name="Dick Ramdass",
+            course=course,
+            phone_numbers="+xx xxx xx xx",
+            group=group,
         )
 
     def test_update_or_create_attendance(self):
@@ -58,11 +72,11 @@ class UpdateOrCreateAttendanceTest(TestCase):
         attendance_list = {
             str(student.id): random.choice([True, False]) for student in students
         }
-        
+
         result = _update_or_create_attendance(
             attendance_list=attendance_list,
             students=students,
-            attendance_class=attendance_class, # type: ignore
+            attendance_class=attendance_class,  # type: ignore
         )
 
         self.assertFalse(result)
@@ -74,7 +88,7 @@ class UpdateOrCreateAttendanceTest(TestCase):
         }
 
         result = _update_or_create_attendance(
-            attendance_list=attendance_list, students=students, attendance_class=None # type: ignore
+            attendance_list=attendance_list, students=students, attendance_class=None  # type: ignore
         )
 
         self.assertTrue(result)

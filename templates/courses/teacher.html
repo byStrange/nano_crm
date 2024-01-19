@@ -1,0 +1,129 @@
+{% extends "./base.html" %} {% block title %} Teacher - {{ teacher.full_name}}
+{% endblock title %} {% block content %}
+<div class="container py-3" style="overflow: auto; height: 100vh">
+  {% if messages %} {% for message in messages %}
+  <div
+    class="alert alert-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}danger{%elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS%}success{% endif %} alert-dismissible fade show"
+    role="alert"
+  >
+    {{ message }}
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  {% endfor %} {% endif %}
+  <h1>{{teacher.full_name}}</h1>
+  <div class="row">
+    <div class="col-lg-6 col-md-12 col-sm-12">
+      <div class="card">
+        <div
+          class="d-flex card-header align-items-center justify-content-between"
+        >
+          <h4>Update teacher</h4>
+        </div>
+        <div class="card-body">
+          <form action="" method="post">
+            {% csrf_token %} {{ form }}
+            <button class="mt-2 btn btn-primary" type="submit">Saqlash</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {% if teacher.registertoken %}
+    <div class="col-lg-6 col-sm-12">
+      <div class="card">
+        <div class="card-header">
+          <h4>Login link</h4>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="basic-url" class="form-label"
+              >Teacher register url</label
+            >
+            <div class="input-group">
+              <span class="input-group-text" id="basic-addon3"
+                >/token-register/</span
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="basic-url"
+                aria-describedby="basic-addon3 basic-addon4"
+                value="{{ teacher.registertoken.token }}"
+              />
+              <button
+                class="btn btn-secondary"
+                type="button"
+                onclick="navigator.clipboard.writeText(`${location.origin}{% url 'accounts:token_register' teacher.registertoken.token %}`).then( () => { alert('Copied to clipboard!'); }, (err) => { console.error('Failed to copy text: ', err); });"
+              >
+                copy
+              </button>
+            </div>
+            <div class="form-text" id="basic-addon4">
+              This link is used to create an account for this teacher.
+            </div>
+          </div>
+          <button
+            type="button"
+            class="btn btn-outline-danger"
+            data-bs-toggle="modal"
+            data-bs-target="#confirmModal"
+          >
+            Revoke this token
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% if teacher.registertoken %}
+<div
+  class="modal fade"
+  id="confirmModal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5 text-danger" id="exampleModalLabel">
+          Revoke Link
+        </h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure want to revoke this link?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <form
+          action="{% url 'accounts:revoke_token' teacher.registertoken.token %}"
+          method="post"
+        >
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %} {% endblock content %} {% block script %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    new Choices("#id_courses");
+  });
+</script>
+{% endblock %}

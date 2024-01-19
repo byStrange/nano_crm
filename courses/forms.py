@@ -1,71 +1,64 @@
-from typing import Dict, List, Tuple
-
 from django import forms
-from django.db import models
-from django.db.models.query import QuerySet
 
-from main.models import DAYS_OF_WEEK, Class, Course, Student, Teacher, time_slots
+from core.constants import DEFAULT_INPUT_ATTRS, DAYS_OF_WEEK, time_slots
+from accounts.models import Teacher
+from core.models import Course, Dept
+from courses.models import Student
 
-DEFAULT_INPUT_ATTRS: Dict[str, str] = {"class": "form-control"}
-Fields = List[str] | Tuple[str]
-Widgets = Dict[str, forms.Widget]
+class CreateCourseForm(forms.ModelForm):
+    class Meta:
+        model = Course
+        exclude = ["dept"]
+        widgets = {
+            "name": forms.TextInput(attrs=DEFAULT_INPUT_ATTRS),
+            "shortname": forms.TextInput(attrs=DEFAULT_INPUT_ATTRS),
+            "price": forms.NumberInput(attrs=DEFAULT_INPUT_ATTRS),
+        }
 
 
 class CreateClassForm(forms.Form):
-    name: forms.CharField = forms.CharField(
+    def __init__(self, *args, dept, **kwargs):
+        super().__init__(*args, **kwargs)  # type: ignore
+        if dept:
+            self.fields["teacher"] = forms.ChoiceField(
+                choices=Teacher.objects.filter(dept=dept).values_list("id", "full_name")
+            )
+            self.fields["course"] = forms.ChoiceField(
+                choices=Course.objects.filter(dept=dept).values_list("id", "name"),
+            )
+
+    name = forms.CharField(
         max_length=254, widget=forms.TextInput(attrs=DEFAULT_INPUT_ATTRS)
     )
-    day: forms.MultipleChoiceField = forms.MultipleChoiceField(
+    day = forms.MultipleChoiceField(
         choices=DAYS_OF_WEEK,
         initial=["Monday", "Wednesday", "Friday"],
     )
-    time: forms.ChoiceField = forms.ChoiceField(choices=time_slots)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["course"] = forms.ChoiceField(
-            choices=Course.objects.all().values_list("id", "name"),
-        )
-
-
-class CreateTeacherForm(forms.ModelForm):
-    class Meta:
-        mode = Teacher
-        fields: Fields = [
-            "full_name",
-            "working_days",
-            "working_time",
-            "courses",
-            "address",
-            "phone_numbers",
-        ]
-        widgets: Widgets = {
-            "full_name": forms.TextInput(attrs=DEFAULT_INPUT_ATTRS),
-            "working_days": forms.Select(attrs=DEFAULT_INPUT_ATTRS),
-            "working_time": forms.TextInput(attrs=DEFAULT_INPUT_ATTRS),
-            "faculties": forms.SelectMultiple(attrs=DEFAULT_INPUT_ATTRS),
-            "address": forms.TextInput(attrs=DEFAULT_INPUT_ATTRS),
-            "phone_numbers": forms.TextInput(attrs=DEFAULT_INPUT_ATTRS),
-        }
+    time = forms.ChoiceField(choices=time_slots)
+    percentage = forms.IntegerField(widget=forms.NumberInput(attrs=DEFAULT_INPUT_ATTRS))
 
 
 class RegisterStudentForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         teacher: Teacher | None = kwargs.pop("teacher", None)
+        dept: Dept | None = kwargs.pop("dept", None)
         super().__init__(*args, **kwargs)
         if teacher:
             self.fields["course"].queryset = Course.objects.filter(dept=teacher.dept)
+        elif dept:
+            self.fields["course"].queryset = Course.objects.filter(dept=dept)
 
     class Meta:
         model = Student
-        fields: Fields = [
+        fields = [
             "full_name",
             "address",
             "phone_numbers",
             "course",
             "condition",
+            "groups"
         ]
-        widgets: Widgets = {
+        widgets = {
             "full_name": forms.TextInput(
                 attrs={**DEFAULT_INPUT_ATTRS, "placeholder": "Ismi", "required": True}
             ),

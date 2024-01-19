@@ -1,42 +1,12 @@
-from typing import List, Tuple
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.db import models
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
 
-from main.models import (
-    Assign,
-    Attendance,
-    AttendanceClass,
-    Chef,
-    Class,
-    Course,
-    CustomUser,
-    Dept,
-    Student,
-    Teacher,
-)
+from courses.models import Assign, Attendance, AttendanceClass, Class, Student
 
-
-models = [Class, Student, Teacher, Assign, AttendanceClass, Course, Dept, Chef]
-
-
-class CustomUserAdmin(UserAdmin):
-    model = CustomUser
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        (
-            None,
-            {"fields": ("user_type",)},
-        ),
-    )
-    fieldsets = UserAdmin.fieldsets + (
-        (
-            None,
-            {"fields": ("user_type",)},
-        ),
-    )  # type: ignore
+models = [Class, Student, Assign, AttendanceClass]
 
 
 class AttendanceAdmin(admin.ModelAdmin):
@@ -50,7 +20,6 @@ class AttendanceAdmin(admin.ModelAdmin):
 
 
 # Register the CustomUser model with the customized UserAdmin
-admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Attendance, AttendanceAdmin)
 
 [admin.site.register(model) for model in models]

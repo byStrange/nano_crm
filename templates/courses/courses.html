@@ -1,67 +1,69 @@
-{% extends "./base.html" %} {% block title %} NANO - O'qituvchilar {% endblock title %} {% block content %}
-<div class="container">
+{% extends "./base.html" %} {% block title %} Nano - Kurslar {% endblock title%}
+{% block content %}
+<div class="container py-3" style="height: 100vh; overflow: auto">
   <div class="row align-items-center">
-    {% for teacher in teachers %}
+    {% if messages %} {% for message in messages %}
+    <div
+      class="alert alert-{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}danger{%elif message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS%}success{% endif %} alert-dismissible fade show"
+      role="alert"
+    >
+      {{ message }}
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+      ></button>
+    </div>
+    {% endfor %} {% endif %} 
+    {% for course in courses %}
     <div class="col-lg-3 col-md-4 col-sm-6">
       <div class="card border-success mb-3" style="max-width: 18rem">
         <div class="card-header bg-transparent border-success">
-          {{ teacher.get_working_days_display }}, {{teacher.working_time}}
+          {{ course.name }} - {{ course.shortname }}
         </div>
         <div class="card-body">
-          <h5 class="card-title">{{ teacher.full_name}}</h5>
-          <p class="card-text">
-            <b>Guruhlari: </b>
-            <span>
-              {% for assign in teacher.assign_set.all %}
-              <a
-                href="#"
-                class="badge text-bg-primary"
-                >{{  assign.class_id }}</a
-              >
-              {% endfor %}
-            </span>
-          </p>
+          <h5 class="card-title text-primary">{{ course.price }} UZS</h5>
         </div>
         <div class="card-footer bg-transparent border-success">
           <a
-            href="{% url 'main:teacher' teacher.id %}"
+            href="{% url 'courses:course' course.id %}"
             class="btn btn-outline-primary"
-            >Batafsil
+            >Tahrirlash
           </a>
         </div>
       </div>
     </div>
-    {% endfor %}
+    {% endfor %} {% if request.user.user_type == "chef" %}
     <div class="col-lg-3 col-md-4 col-sm-6">
       <button
         type="button"
         class="btn btn-outline-secondary"
         data-bs-toggle="modal"
-        data-bs-target="#addTeacherModal"
+        data-bs-target="#addGroupModal"
       >
         <div
           class="d-flex justify-content-center align-items-center flex-column"
         >
           <span class="plus-icon" style="font-size: 50px">+</span>
-          O'qituvchi qo'shish
+          Yangi kurs ochish
         </div>
       </button>
     </div>
+    {% endif %}
   </div>
 </div>
 <div
   class="modal fade"
-  id="addTeacherModal"
+  id="addGroupModal"
   tabindex="-1"
-  aria-labelledby="addTeacherModalLabel"
+  aria-labelledby="addGroupModalLabel"
   aria-hidden="true"
 >
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h1 class="modal-title fs-5" id="addTeacherModalLabel">
-          O'qituvchi qo'shish
-        </h1>
+        <h1 class="modal-title fs-5" id="addGroupModalLabel">Kurs ochish</h1>
         <button
           type="button"
           class="btn-close"
@@ -70,30 +72,21 @@
         ></button>
       </div>
       <div class="modal-body">
-        <form action="" method="post">
-          {% csrf_token %}
-          {{ form }}
-        </form>
+        <form action="" method="post">{% csrf_token %} {{ form }}</form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
           Bekor qilish
         </button>
-        <button type="button" class="btn btn-primary" onclick="window.document.forms[0].submit()">Yaratish</button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="document.forms[0].submit()"
+        >
+          Yaratish
+        </button>
       </div>
     </div>
   </div>
 </div>
 {% endblock content %}
-
-
-{% block script %}
-<script>
-
-    document.addEventListener("DOMContentLoaded", () => {
-      new Choices("#id_courses")
-      new Choices("#id_working_days")
-    })
-
-</script>
-{% endblock %}

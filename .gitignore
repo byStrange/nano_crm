@@ -13,7 +13,7 @@ local_settings.py
 # Ignore secret key
 *.secret_key
 
-# Ignore log fil    es
+# Ignore log files
 logs/
 
 # Ignore media files
@@ -25,3 +25,6 @@ media/
 # Ignore IDE files
 .idea/
 .vscode/
+
+# Ignore python cache folder
+**/__pycache__/
