@@ -45,12 +45,14 @@ class Assign(models.Model):
 
 class AttendanceClass(models.Model):
     assign = models.ForeignKey("Assign", on_delete=models.CASCADE)
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateField()
 
     class Meta:
         verbose_name: str = "Attendance Session"
         verbose_name_plural: str = "Attendance Sessions"
 
+    def __str__(self) -> str:
+        return str(self.date)
 
 class Student(UUIDMixin):
     CONDITION_CHOICES = (
@@ -71,7 +73,7 @@ class Student(UUIDMixin):
     )
 
     def __str__(self):
-        return self.full_name
+        return self.full_name + " ||  " +  str(self.groups.first())
     def get_attendance_on_day(self, day):
         try:
             attendance = self.attendance_set.get(date=day) # type: ignore
@@ -83,7 +85,7 @@ class Attendance(models.Model):
     student = models.ForeignKey("Student", on_delete=models.CASCADE)
     is_present = models.BooleanField(default=False)
     attendance_class = models.ForeignKey("AttendanceClass", on_delete=models.CASCADE)
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateField()
     updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     def __str__(self):

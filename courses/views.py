@@ -32,6 +32,9 @@ from courses.models import Assign, Attendance, AttendanceClass, Class, Student
 from payments.forms import StudentPaymentForm
 from payments.models import Price, StudentPayment
 
+print(timezone.now())
+print(datetime.now())
+
 
 def is_valid_user(request: HttpRequest) -> bool:
     if request.user.user_type in ("teacher", "chef") and hasattr(request.user, "dept"):  # type: ignore
@@ -67,15 +70,30 @@ def generate_month_days(year, month):
     _, last_day = monthrange(year, month)
     return [datetime(year, month, day) for day in range(1, last_day + 1)]
 
+@register.filter(name="get_now")
+def get_now():
+    return timezone.localtime(timezone.now()).date()
 
 @register.filter
 def get_attendance_on_day(student, day):
     try:
-        print(student, day)
-        attendance: Attendance = Attendance.objects.get(student=student, date__day=day)
-        return f"{attendance.is_present} {  attendance.date.day}"
+        print(day)
+        attendance: Attendance = Attendance.objects.get(student=student, date=day)
+        print("ATTENDANCE EXISTS", attendance.is_present, day)
+        return attendance.is_present
     except Attendance.DoesNotExist:
+        print("ATTENDANCE does not  EXISTS", day)
         return None
+
+
+@register.filter
+def get_attendance_class_on_day(assign, day):
+    try:
+        a = AttendanceClass.objects.get(assign=assign, date__day=day)
+        return True
+    except AttendanceClass.DoesNotExist:
+        return None
+
 
 @login_required
 def index(
@@ -265,7 +283,7 @@ def group(request: HttpRequest, assign_id: int) -> HttpResponse:
     print(monthly_attendance)
     attendance_class_queryset: QuerySet[
         AttendanceClass
-    ] = AttendanceClass.objects.filter(date__date=now.date(), assign=assign)
+    ] = AttendanceClass.objects.filter(date=now.date(), assign=assign)
     course_period: str = assign.period
     course_start_time_str, course_end_time_str = course_period.split(" - ")
     course_start_time, course_end_time = [
@@ -302,13 +320,24 @@ def take_attendance(request: HttpRequest, assign_id: int) -> JsonResponse:
     if request.method == "POST":
         try:
             now: datetime = datetime.now()
-            attendance_list: Dict[str, bool] = json.loads(request.body)
+            data = json.loads(request.body)
+            attendance_list: Dict[str, bool] = data.get("data")
+
+            date = data.get("date")
+            if not date:
+                date = now.date()
+            else:
+                date = datetime.strptime(date, "%Y-%m-%d").date()
+
+
+            print("GOT DATA AS", date)
+
             assign = Assign.objects.get(id=assign_id)
-            attendance_class_queryset: QuerySet[
-                AttendanceClass
-            ] = AttendanceClass.objects.filter(date__date=now.date(), assign=assign)
+            print(date)
+            attendance_class_queryset = AttendanceClass.objects.filter(date=date, assign=assign)
+
+            print(AttendanceClass.objects.filter(date="2024-01-01"))
             student_ids: List[str] = [student_id for student_id in attendance_list]
-            print(student_ids, attendance_list)
             students: QuerySet[Student] = Student.objects.filter(id__in=student_ids)
             course_period: str = assign.period
             course_start_time_str, course_end_time_str = course_period.split(" - ")
@@ -316,12 +345,14 @@ def take_attendance(request: HttpRequest, assign_id: int) -> JsonResponse:
                 datetime.strptime(course_start_time_str, "%H:%M").time(),
                 datetime.strptime(course_end_time_str, "%H:%M").time(),
             ]
-            if not (course_start_time <= now.time() <= course_end_time):
+
+            if not (course_start_time <= now.time() <= course_end_time) and request.user.user_type != "chef":  # type: ignore
                 return JsonResponse(
                     {"error": "Cannot update attendance outside of course period"}
                 )
             if attendance_class_queryset.exists():
                 attendance_class: AttendanceClass = attendance_class_queryset.first()  # type: ignore
+                print("Attendance exists: id=", attendance_class.pk)
                 _update_or_create_attendance(
                     attendance_list=attendance_list,
                     students=students,
@@ -330,8 +361,18 @@ def take_attendance(request: HttpRequest, assign_id: int) -> JsonResponse:
                 return JsonResponse(
                     {"success": "Attendance has been updated successfull"}
                 )
-            attendance_class: AttendanceClass = AttendanceClass(assign=assign)
+            attendance_class: AttendanceClass = AttendanceClass(
+                assign=assign, date=date
+            )
+            print(
+                "ATTendance class did not found, creating new one with \ndate: ", date
+            )
+            print(attendance_class.date)
             attendance_class.save()
+
+            a = AttendanceClass.objects.filter(date=date, assign=assign)
+            print(a)
+            print("saved and id=", attendance_class.pk)
             _update_or_create_attendance(
                 attendance_list=attendance_list,
                 students=students,
@@ -358,12 +399,17 @@ def _update_or_create_attendance(
 
         for student in students:
             student_id = str(student.id)
+            print(student_id, attendance_list.get(student_id))
             attendance_status = attendance_list.get(student_id, False)
             attendance, created = Attendance.objects.update_or_create(
                 student=student,
                 attendance_class=attendance_class,
-                defaults={"is_present": attendance_status},
+                defaults={
+                    "is_present": attendance_status,
+                    "date": attendance_class.date,
+                },
             )
+            print(attendance, created)
         return True
     except Exception as err:
         print(

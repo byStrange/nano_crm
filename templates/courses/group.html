@@ -40,7 +40,7 @@
                   {% endfor %}
                 </td>
                 <td>
-                  <div class="checkbox-wrapper-44">
+                  <div class="checkbox-wrapper-44" id="checkboxPrimary">
                     <label class="toggleButton">
                       <input type="checkbox"
                              name="{{ student.id }}"
@@ -59,7 +59,7 @@
           {% else %}
             {% for attendance in attendances %}
               <tr>
-                <th style="position: sticky; left: -1px;" scope="row">{{ forloop.counter }}</th>
+                <th scope="row">{{ forloop.counter }}</th>
                 <td>
                   <a href="{% url 'courses:student' attendance.student.id %}"
                      class="link-dark">{{ attendance.student.full_name }}</a>
@@ -75,6 +75,7 @@
                   {% endfor %}
                 </td>
                 <td>
+                  {{ attendance.date }} {{ attendance.id }}
                   <div class="checkbox-wrapper-44">
                     <label class="toggleButton">
                       <input type="checkbox"
@@ -96,13 +97,19 @@
         </tbody>
       </table>
     </div>
-    <div class="table-responsive">
+    <div class="table-responsive" id="customAttendance">
       <table class="table table-hover"style="width: 100%; overflow: auto">
         <thead>
           <tr>
             <th scope="col">#</th>
             <th scope="col">Student name</th>
-            {% for day in 2024|generate_month_days:1 %}<th scope="col">{{ day.day }}</th>{% endfor %}
+            {% for day in 2024|generate_month_days:1 %}
+              <th scope="col">
+                {{ day.day }}
+                <button onclick="saveAttendanceFor(parseFloat('{{ forloop.counter }}'), '{{ day.date|date:"Y-m-d" }}')"
+                        class="btn btn-primary">save</button>
+              </th>
+            {% endfor %}
           </tr>
         </thead>
         <tbody>
@@ -110,7 +117,39 @@
             <tr>
               <td>{{ forloop.counter }}</td>
               <td>{{ student.full_name }}</td>
-              {% for day in 2023|generate_month_days:1 %}<td>{{ student|get_attendance_on_day:day.day }}</td>{% endfor %}
+              {% for day in 2024|generate_month_days:1 %}
+                {% if student|get_attendance_on_day:day.date %}
+                  {% with a=student|get_attendance_on_day:day.date %}
+                    <td>
+                      <div class="checkbox-wrapper-44" id="checkboxSecondary">
+                        <label class="toggleButton">
+                          <input type="checkbox" {% if a %}checked{% endif %} name="{{ student.id }}" />
+                          <div>
+                            <svg viewBox="0 0 44 44">
+                              <path transform="translate(-2.000000, -2.000000)" d="M14,24 L21,31 L39.7428882,11.5937758 C35.2809627,6.53125861 30.0333333,4 24,4 C12.95,4 4,12.95 4,24 C4,35.05 12.95,44 24,44 C35.05,44 44,35.05 44,24 C44,19.3 42.5809627,15.1645919 39.7428882,11.5937758">
+                              </path>
+                            </svg>
+                          </div>
+                        </label>
+                      </div>
+                    </td>
+                  {% endwith %}
+                {% else %}
+                  <td>
+                    <div class="checkbox-wrapper-44" id="checkboxSecondary">
+                      <label class="toggleButton">
+                        <input type="checkbox" id="{{ day }}" name="{{ student.id }}" />
+                        <div>
+                          <svg viewBox="0 0 44 44">
+                            <path transform="translate(-2.000000, -2.000000)" d="M14,24 L21,31 L39.7428882,11.5937758 C35.2809627,6.53125861 30.0333333,4 24,4 C12.95,4 4,12.95 4,24 C4,35.05 12.95,44 24,44 C35.05,44 44,35.05 44,24 C44,19.3 42.5809627,15.1645919 39.7428882,11.5937758">
+                            </path>
+                          </svg>
+                        </div>
+                      </label>
+                    </div>
+                  </td>
+                {% endif %}
+              {% endfor %}
               {% comment %} {% for day in 2024|generate_month_days:1 %}
             {% for a in monthly_attendance %}
               {% for attendance in a.attendance_set.all %}
@@ -192,11 +231,41 @@
 {% endblock content %}
 {% block script %}
   <script>
+function     saveAttendanceFor(index, day) {
+  const customAttendanceTable = document.querySelector("#customAttendance tbody");
+  const rows = customAttendanceTable.querySelectorAll('tr');
+  const data = {}
+
+  rows.forEach((row) => {
+    const attendanceCol = row.children[index + 1];
+    const input = attendanceCol.querySelector('input');
+    data[input.name] = input.checked 
+  })
+
+  const url = `{% url 'courses:attendance' assign.id %}`;
+
+  fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": `{{ csrf_token }}`,
+    },
+    body: JSON.stringify({ data: data, date: day})  ,
+  })
+    .then((res) => res.json())
+    .then((result) => {
+      console.log(result)
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+
+}
   const url = `{% url 'courses:attendance' assign.id %}`;
   const finishAttendance = () => {
     const data = {};
     document
-      .querySelectorAll('.checkbox-wrapper-44 input[type="checkbox"]')
+      .querySelectorAll('#checkboxPrimary .checkbox-wrapper-44 input[type="checkbox"]')
       .forEach((checkbox) => {
         data[checkbox.name] = checkbox.checked;
       });
@@ -206,7 +275,7 @@
         "Content-Type": "application/json",
         "X-CSRFToken": `{{ csrf_token }}`,
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ data: data }) ,
     })
       .then((res) => res.json())
       .then((result) => {
