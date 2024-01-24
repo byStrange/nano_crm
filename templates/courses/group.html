@@ -3,13 +3,33 @@
   NANO - Guruh 1
 {% endblock title %}
 {% block content %}
+<style>  
+  table tbody th {
+    font-weight: 100;
+    font-style: italic;
+    text-align: left;
+    position: relative;
+  }
+  table thead th:first-child, table thead th:nth-child(2) {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: white;
+  }
+  table tbody td:first-child, table tbody td:nth-child(2) {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 1;
+  }
+</style>
   <div class="container py-3">
     <div class="d-flex align-items-center gap-1">
       <h1 class="text-{% if attendance_class_exists %}success{% else %}danger{% endif %}">{{ assign.class_id.name }}</h1>
       - <span class="badge badge text-bg-primary">{{ assign.period }}</span>
     </div>
     <span class="text-muted">{{ current_date|date:"F j, Y" }}</span>
-    <div class="table-responsive">
+    {% comment %} <div class="table-responsive">
       <table class="table table-hover">
         <thead>
           <tr>
@@ -75,7 +95,6 @@
                   {% endfor %}
                 </td>
                 <td>
-                  {{ attendance.date }} {{ attendance.id }}
                   <div class="checkbox-wrapper-44">
                     <label class="toggleButton">
                       <input type="checkbox"
@@ -96,7 +115,7 @@
           {% endif %}
         </tbody>
       </table>
-    </div>
+    </div> {% endcomment %}
     <div class="table-responsive" id="customAttendance">
       <table class="table table-hover"style="width: 100%; overflow: auto">
         <thead>
@@ -166,7 +185,7 @@
         </tbody>
       </table>
     </div>
-    {% if out_of_period %}
+    {% comment %} {% if out_of_period %}
       <button type="button"
               class="btn btn-outline-success"
               data-bs-toggle="modal"
@@ -185,7 +204,7 @@
           Davomatni yakunlash
         {% endif %}
       </button>
-    {% endif %}
+    {% endif %} {% endcomment %}
   </div>
   <!-- Modal -->
   <div class="modal fade"
